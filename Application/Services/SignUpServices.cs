@@ -4,8 +4,8 @@ using Infraestrutura.Repositories;
 using BCrypt.Net;
 using System.Text.RegularExpressions;
 using Apresentacao.Services;
-
-
+using System.IO;
+using System;
 
 namespace Application.Services
 {
@@ -42,6 +42,16 @@ namespace Application.Services
                 throw new ArgumentException("Email já cadastrado.");
             }
 
+            string fotoBase64 = null;
+            if (signUpDto.Foto != null)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    signUpDto.Foto.CopyTo(memoryStream);
+                    fotoBase64 = Convert.ToBase64String(memoryStream.ToArray());
+                }
+            }
+
             var signUp = new SignUp
             {
                 Username = signUpDto.Username,
@@ -53,7 +63,7 @@ namespace Application.Services
                 Sexo = signUpDto.Sexo,
                 Cor = signUpDto.Cor,
                 Senha = BCrypt.Net.BCrypt.HashPassword(signUpDto.Senha),
-                Foto = signUpDto.Foto,
+                Foto = fotoBase64, 
                 Enderecos = signUpDto.Enderecos.Select(e => new Endereco
                 {
                     Logradouro = e.Logradouro,
@@ -80,7 +90,7 @@ namespace Application.Services
 
         private bool IsValidCPF(string cpf)
         {
-            return Regex.IsMatch(cpf, @"^\d{11}$"); 
+            return Regex.IsMatch(cpf, @"^\d{11}$");
         }
 
         private bool IsValidEmail(string email)

@@ -1,4 +1,5 @@
-﻿
+﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 
 namespace Core.DTOs
 {
@@ -13,7 +14,7 @@ namespace Core.DTOs
         public string Sexo { get; set; }
         public string Cor { get; set; }
         public string Senha { get; set; }
-        public string Foto { get; set; }
+        public IFormFile Foto { get; set; } 
         public List<EnderecoDTO> Enderecos { get; set; }
     }
 }

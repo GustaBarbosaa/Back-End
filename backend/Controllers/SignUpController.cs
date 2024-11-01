@@ -2,6 +2,9 @@
 using Core.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Apresentacao.Controllers
 {
@@ -17,7 +20,7 @@ namespace Apresentacao.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateSignUp(SignUpDTO signUpDto)
+        public async Task<IActionResult> CreateSignUp([FromForm] SignUpDTO signUpDto)
         {
             try
             {
@@ -36,7 +39,7 @@ namespace Apresentacao.Controllers
                         signUp.Telefone,
                         signUp.Sexo,
                         signUp.Cor,
-                        signUp.Foto,
+                        signUp.Foto,  
                         signUp.Enderecos
                     },
                     Token = token
@@ -47,6 +50,7 @@ namespace Apresentacao.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
 
         [HttpGet("{id}")]
         public IActionResult GetSignUpById(int id)
