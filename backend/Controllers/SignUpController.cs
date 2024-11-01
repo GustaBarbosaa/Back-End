@@ -3,7 +3,6 @@ using Core.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace Apresentacao.Controllers
@@ -39,7 +38,7 @@ namespace Apresentacao.Controllers
                         signUp.Telefone,
                         signUp.Sexo,
                         signUp.Cor,
-                        signUp.Foto,  
+                        signUp.Foto,
                         signUp.Enderecos
                     },
                     Token = token
@@ -51,6 +50,34 @@ namespace Apresentacao.Controllers
             }
         }
 
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] LoginDTO loginDto)
+        {
+            try
+            {
+                var (user, token) = _signUpService.Authenticate(loginDto.Email, loginDto.Senha);
+
+                if (user == null)
+                {
+                    return Unauthorized(new { error = "Email ou senha incorretos." });
+                }
+
+                return Ok(new
+                {
+                    User = new
+                    {
+                        user.Id,
+                        user.Username,
+                        user.Email
+                    },
+                    Token = token
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         [HttpGet("{id}")]
         public IActionResult GetSignUpById(int id)

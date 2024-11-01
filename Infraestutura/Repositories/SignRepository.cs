@@ -25,6 +25,11 @@ namespace Infraestrutura.Repositories
             return _context.SignUps.FirstOrDefault(s => s.Id == id);
         }
 
+        public SignUp GetByEmail(string email)
+        {
+            return _context.SignUps.FirstOrDefault(s => s.Email == email);
+        }
+
         public bool ExistsByCPF(string cpf)
         {
             return _context.SignUps.Any(s => s.CPF == cpf);

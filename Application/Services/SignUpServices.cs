@@ -63,7 +63,7 @@ namespace Application.Services
                 Sexo = signUpDto.Sexo,
                 Cor = signUpDto.Cor,
                 Senha = BCrypt.Net.BCrypt.HashPassword(signUpDto.Senha),
-                Foto = fotoBase64, 
+                Foto = fotoBase64,
                 Enderecos = signUpDto.Enderecos.Select(e => new Endereco
                 {
                     Logradouro = e.Logradouro,
@@ -76,6 +76,19 @@ namespace Application.Services
 
             var token = _tokenService.GenerateToken(signUp);
             return (signUp, token);
+        }
+
+        public (SignUp, string) Authenticate(string email, string senha)
+        {
+            var user = _signRepository.GetByEmail(email);
+
+            if (user == null || !VerifyPassword(senha, user.Senha))
+            {
+                return (null, null); 
+            }
+
+            var token = _tokenService.GenerateToken(user);
+            return (user, token);
         }
 
         public SignUp GetSignUpById(int id)
