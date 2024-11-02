@@ -66,7 +66,7 @@ namespace Apresentacao.Controllers
                 {
                     User = new
                     {
-                        user.Id,
+                        user.Id,  
                         user.Username,
                         user.Email
                     },
@@ -98,6 +98,19 @@ namespace Apresentacao.Controllers
                 signUp.Cor,
                 signUp.Foto,
                 signUp.Enderecos
+            });
+        }
+
+        [HttpGet("profile/{id}")]
+        public IActionResult GetUserProfile(int id)
+        {
+            var user = _signUpService.GetSignUpById(id);
+            if (user == null) return NotFound();
+
+            return Ok(new
+            {
+                user.Username,
+                Foto = user.Foto
             });
         }
     }
