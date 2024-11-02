@@ -1,5 +1,5 @@
-﻿using Core.DTOs;
-using Core.Models;
+﻿// File: Apresentacao/Controllers/SignUpController.cs
+using Core.DTOs;
 using Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -66,7 +66,7 @@ namespace Apresentacao.Controllers
                 {
                     User = new
                     {
-                        user.Id,  
+                        user.Id,
                         user.Username,
                         user.Email
                     },
@@ -83,7 +83,7 @@ namespace Apresentacao.Controllers
         public IActionResult GetSignUpById(int id)
         {
             var signUp = _signUpService.GetSignUpById(id);
-            if (signUp == null) return NotFound();
+            if (signUp == null) return NotFound(new { error = "Usuário não encontrado." });
 
             return Ok(new
             {
@@ -105,7 +105,7 @@ namespace Apresentacao.Controllers
         public IActionResult GetUserProfile(int id)
         {
             var user = _signUpService.GetSignUpById(id);
-            if (user == null) return NotFound();
+            if (user == null) return NotFound(new { error = "Usuário não encontrado." });
 
             return Ok(new
             {
@@ -113,5 +113,49 @@ namespace Apresentacao.Controllers
                 Foto = user.Foto
             });
         }
+
+        [HttpPut("editar-perfil/{id}")]
+        public IActionResult UpdateProfile(int id, [FromForm] UpdateProfileDTO updateDto)
+        {
+            try
+            {
+                // Verifica se o usuário existe antes de tentar atualizar
+                var existingUser = _signUpService.GetSignUpById(id);
+                if (existingUser == null)
+                {
+                    return NotFound(new { error = "Usuário não encontrado para atualização." });
+                }
+
+                var updatedUser = _signUpService.UpdateProfile(id, updateDto);
+
+                return Ok(new
+                {
+                    User = new
+                    {
+                        updatedUser.Id,
+                        updatedUser.Username,
+                        updatedUser.NomeSocial,
+                        updatedUser.CPF,
+                        updatedUser.Nacionalidade,
+                        updatedUser.Email,
+                        updatedUser.Telefone,
+                        updatedUser.Sexo,
+                        updatedUser.Cor,
+                        updatedUser.Foto,
+                        updatedUser.Senha,
+                        updatedUser.Enderecos
+                    }
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Erro interno ao processar a solicitação." });
+            }
+        }
     }
 }
+

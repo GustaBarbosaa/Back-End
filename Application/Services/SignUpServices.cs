@@ -1,11 +1,12 @@
-﻿using Core.DTOs;
+﻿// File: Application/Services/SignUpService.cs
+using Core.DTOs;
 using Core.Models;
 using Infraestrutura.Repositories;
 using BCrypt.Net;
+using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using Apresentacao.Services;
-using System.IO;
-using System;
 
 namespace Application.Services
 {
@@ -22,34 +23,13 @@ namespace Application.Services
 
         public (SignUp, string) CreateSignUp(SignUpDTO signUpDto)
         {
-            if (!IsValidCPF(signUpDto.CPF))
-            {
-                throw new ArgumentException("CPF inválido.");
-            }
-
-            if (!IsValidEmail(signUpDto.Email))
-            {
-                throw new ArgumentException("Email inválido.");
-            }
-
-            if (_signRepository.ExistsByCPF(signUpDto.CPF))
-            {
-                throw new ArgumentException("CPF já cadastrado.");
-            }
-
-            if (_signRepository.ExistsByEmail(signUpDto.Email))
-            {
-                throw new ArgumentException("Email já cadastrado.");
-            }
+            ValidateSignUpData(signUpDto);
 
             string fotoBase64 = null;
             if (signUpDto.Foto != null)
             {
-                using (var memoryStream = new MemoryStream())
-                {
-                    signUpDto.Foto.CopyTo(memoryStream);
-                    fotoBase64 = Convert.ToBase64String(memoryStream.ToArray());
-                }
+                // Usa OpenReadStream() para converter IFormFile para Stream
+                fotoBase64 = ConvertImageToBase64(signUpDto.Foto.OpenReadStream());
             }
 
             var signUp = new SignUp
@@ -81,10 +61,9 @@ namespace Application.Services
         public (SignUp, string) Authenticate(string email, string senha)
         {
             var user = _signRepository.GetByEmail(email);
-
             if (user == null || !VerifyPassword(senha, user.Senha))
             {
-                return (null, null); 
+                return (null, null);
             }
 
             var token = _tokenService.GenerateToken(user);
@@ -99,6 +78,81 @@ namespace Application.Services
         public bool VerifyPassword(string plainPassword, string hashedPassword)
         {
             return BCrypt.Net.BCrypt.Verify(plainPassword, hashedPassword);
+        }
+
+        public SignUp UpdateProfile(int id, UpdateProfileDTO updateDto)
+        {
+            var user = _signRepository.GetById(id);
+            if (user == null) throw new ArgumentException("Usuário não encontrado.");
+
+            // Validações para CPF e Email se fornecidos
+            if (!string.IsNullOrWhiteSpace(updateDto.CPF) && !IsValidCPF(updateDto.CPF))
+            {
+                throw new ArgumentException("CPF inválido.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Email) && !IsValidEmail(updateDto.Email))
+            {
+                throw new ArgumentException("Email inválido.");
+            }
+
+            // Atualização dos campos
+            user.Username = !string.IsNullOrWhiteSpace(updateDto.Username) ? updateDto.Username : user.Username;
+            user.NomeSocial = updateDto.NomeSocial;
+            user.CPF = updateDto.CPF;
+            user.Nacionalidade = updateDto.Nacionalidade;
+            user.Email = updateDto.Email;
+            user.Telefone = updateDto.Telefone;
+            user.Sexo = updateDto.Sexo;
+            user.Cor = updateDto.Cor;
+
+            // Converte IFormFile Foto para base64, se fornecido
+            if (updateDto.Foto != null)
+            {
+                user.Foto = ConvertImageToBase64(updateDto.Foto.OpenReadStream());
+            }
+
+            // Atualizar a senha, se fornecida
+            if (!string.IsNullOrWhiteSpace(updateDto.NovaSenha))
+            {
+                user.Senha = BCrypt.Net.BCrypt.HashPassword(updateDto.NovaSenha);
+            }
+
+            _signRepository.Update(user);
+            return user;
+        }
+
+
+        private string ConvertImageToBase64(Stream fotoStream)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                fotoStream.CopyTo(memoryStream);
+                return Convert.ToBase64String(memoryStream.ToArray());
+            }
+        }
+
+        private void ValidateSignUpData(SignUpDTO signUpDto)
+        {
+            if (!IsValidCPF(signUpDto.CPF))
+            {
+                throw new ArgumentException("CPF inválido.");
+            }
+
+            if (!IsValidEmail(signUpDto.Email))
+            {
+                throw new ArgumentException("Email inválido.");
+            }
+
+            if (_signRepository.ExistsByCPF(signUpDto.CPF))
+            {
+                throw new ArgumentException("CPF já cadastrado.");
+            }
+
+            if (_signRepository.ExistsByEmail(signUpDto.Email))
+            {
+                throw new ArgumentException("Email já cadastrado.");
+            }
         }
 
         private bool IsValidCPF(string cpf)

@@ -1,6 +1,7 @@
-﻿using Core.Models;
-using Infraestrutura.Repositories.Data;
+﻿// File: Infraestrutura/Repositories/SignRepository.cs
+using Core.Models;
 using System.Linq;
+using Infraestrutura.Repositories.Data;
 
 namespace Infraestrutura.Repositories
 {
@@ -38,6 +39,13 @@ namespace Infraestrutura.Repositories
         public bool ExistsByEmail(string email)
         {
             return _context.SignUps.Any(s => s.Email == email);
+        }
+
+        // Método para atualizar o registro de SignUp no banco de dados
+        public void Update(SignUp signUp)
+        {
+            _context.SignUps.Update(signUp);
+            _context.SaveChanges();
         }
     }
 }
