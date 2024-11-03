@@ -1,4 +1,4 @@
-﻿// File: Apresentacao/Controllers/SignUpController.cs
+﻿
 using Core.DTOs;
 using Application.Services;
 using Microsoft.AspNetCore.Mvc;
