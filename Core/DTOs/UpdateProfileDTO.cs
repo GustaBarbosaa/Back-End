@@ -16,8 +16,6 @@ namespace Core.DTOs
 
         // Alterado de string para IFormFile
         public IFormFile Foto { get; set; }
-
-        public string Enderecos { get; set; }
         public string NovaSenha { get; set; }
     }
 }

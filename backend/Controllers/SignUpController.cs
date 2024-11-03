@@ -143,7 +143,6 @@ namespace Apresentacao.Controllers
                         updatedUser.Cor,
                         updatedUser.Foto,
                         updatedUser.Senha,
-                        updatedUser.Enderecos
                     }
                 });
             }

@@ -3,10 +3,12 @@ using Core.DTOs;
 using Core.Models;
 using Infraestrutura.Repositories;
 using BCrypt.Net;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using Apresentacao.Services;
+using System.Text.Json;
 
 namespace Application.Services
 {
@@ -85,42 +87,34 @@ namespace Application.Services
             var user = _signRepository.GetById(id);
             if (user == null) throw new ArgumentException("Usuário não encontrado.");
 
-            // Validações para CPF e Email se fornecidos
-            if (!string.IsNullOrWhiteSpace(updateDto.CPF) && !IsValidCPF(updateDto.CPF))
-            {
-                throw new ArgumentException("CPF inválido.");
-            }
+            // Atualização condicional: mantém o valor antigo se o campo do DTO estiver vazio ou igual a "string"
+            user.Username = !string.IsNullOrWhiteSpace(updateDto.Username) && updateDto.Username != "string" ? updateDto.Username : user.Username;
+            user.NomeSocial = !string.IsNullOrWhiteSpace(updateDto.NomeSocial) && updateDto.NomeSocial != "string" ? updateDto.NomeSocial : user.NomeSocial;
+            user.CPF = !string.IsNullOrWhiteSpace(updateDto.CPF) && updateDto.CPF != "string" ? updateDto.CPF : user.CPF;
+            user.Nacionalidade = !string.IsNullOrWhiteSpace(updateDto.Nacionalidade) && updateDto.Nacionalidade != "string" ? updateDto.Nacionalidade : user.Nacionalidade;
+            user.Email = !string.IsNullOrWhiteSpace(updateDto.Email) && updateDto.Email != "string" ? updateDto.Email : user.Email;
+            user.Telefone = !string.IsNullOrWhiteSpace(updateDto.Telefone) && updateDto.Telefone != "string" ? updateDto.Telefone : user.Telefone;
+            user.Sexo = !string.IsNullOrWhiteSpace(updateDto.Sexo) && updateDto.Sexo != "string" ? updateDto.Sexo : user.Sexo;
+            user.Cor = !string.IsNullOrWhiteSpace(updateDto.Cor) && updateDto.Cor != "string" ? updateDto.Cor : user.Cor;
 
-            if (!string.IsNullOrWhiteSpace(updateDto.Email) && !IsValidEmail(updateDto.Email))
-            {
-                throw new ArgumentException("Email inválido.");
-            }
-
-            // Atualização dos campos
-            user.Username = !string.IsNullOrWhiteSpace(updateDto.Username) ? updateDto.Username : user.Username;
-            user.NomeSocial = updateDto.NomeSocial;
-            user.CPF = updateDto.CPF;
-            user.Nacionalidade = updateDto.Nacionalidade;
-            user.Email = updateDto.Email;
-            user.Telefone = updateDto.Telefone;
-            user.Sexo = updateDto.Sexo;
-            user.Cor = updateDto.Cor;
-
-            // Converte IFormFile Foto para base64, se fornecido
+            // Converte `IFormFile` para base64 somente se `Foto` estiver presente
             if (updateDto.Foto != null)
             {
                 user.Foto = ConvertImageToBase64(updateDto.Foto.OpenReadStream());
             }
 
-            // Atualizar a senha, se fornecida
-            if (!string.IsNullOrWhiteSpace(updateDto.NovaSenha))
+            // Atualiza a senha se `NovaSenha` estiver presente e não for "string"
+            if (!string.IsNullOrWhiteSpace(updateDto.NovaSenha) && updateDto.NovaSenha != "string")
             {
                 user.Senha = BCrypt.Net.BCrypt.HashPassword(updateDto.NovaSenha);
             }
 
+
             _signRepository.Update(user);
             return user;
         }
+
+
 
 
         private string ConvertImageToBase64(Stream fotoStream)
