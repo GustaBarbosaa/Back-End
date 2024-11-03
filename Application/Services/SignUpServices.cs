@@ -1,4 +1,4 @@
-﻿// File: Application/Services/SignUpService.cs
+
 using Core.DTOs;
 using Core.Models;
 using Infraestrutura.Repositories;
@@ -30,7 +30,7 @@ namespace Application.Services
             string fotoBase64 = null;
             if (signUpDto.Foto != null)
             {
-                // Usa OpenReadStream() para converter IFormFile para Stream
+ 
                 fotoBase64 = ConvertImageToBase64(signUpDto.Foto.OpenReadStream());
             }
 
