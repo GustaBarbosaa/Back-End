@@ -87,7 +87,7 @@ namespace Application.Services
             var user = _signRepository.GetById(id);
             if (user == null) throw new ArgumentException("Usuário não encontrado.");
 
-            // Atualização condicional: mantém o valor antigo se o campo do DTO estiver vazio ou igual a "string"
+    
             user.Username = !string.IsNullOrWhiteSpace(updateDto.Username) && updateDto.Username != "string" ? updateDto.Username : user.Username;
             user.NomeSocial = !string.IsNullOrWhiteSpace(updateDto.NomeSocial) && updateDto.NomeSocial != "string" ? updateDto.NomeSocial : user.NomeSocial;
             user.CPF = !string.IsNullOrWhiteSpace(updateDto.CPF) && updateDto.CPF != "string" ? updateDto.CPF : user.CPF;
@@ -97,7 +97,6 @@ namespace Application.Services
             user.Sexo = !string.IsNullOrWhiteSpace(updateDto.Sexo) && updateDto.Sexo != "string" ? updateDto.Sexo : user.Sexo;
             user.Cor = !string.IsNullOrWhiteSpace(updateDto.Cor) && updateDto.Cor != "string" ? updateDto.Cor : user.Cor;
 
-            // Converte `IFormFile` para base64 somente se `Foto` estiver presente
             if (updateDto.Foto != null)
             {
                 user.Foto = ConvertImageToBase64(updateDto.Foto.OpenReadStream());
