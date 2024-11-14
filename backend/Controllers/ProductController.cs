@@ -25,7 +25,7 @@ namespace Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProducts()
         {
-            return await _context.Produtos
+            var products = await _context.Produtos
                 .Select(p => new ProductDTO
                 {
                     Id = p.Id,
@@ -35,6 +35,8 @@ namespace Api.Controllers
                     Imagem = p.Imagem
                 })
                 .ToListAsync();
+
+            return Ok(products);  // Garante que estamos retornando uma resposta Ok com a lista de produtos
         }
 
         // GET: api/Product/5 - Retorna um produto específico pelo ID
