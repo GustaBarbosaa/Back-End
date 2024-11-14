@@ -5,6 +5,7 @@ using Core.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Core.DTOs;
 
 namespace Api.Controllers
 {
@@ -40,43 +41,40 @@ namespace Api.Controllers
             return brand;
         }
 
-        // POST: api/Brand - Adiciona uma nova marca
+        // POST: api/Brand - Adiciona uma nova marca usando MarcaDto
         [HttpPost]
-        public async Task<ActionResult<Marca>> CreateBrand(Marca brand)
+        public async Task<ActionResult<Marca>> CreateBrand([FromBody] MarcaDto brandDto)
         {
+            var brand = new Marca
+            {
+                Nome = brandDto.Nome
+            };
+
             _context.Marcas.Add(brand);
             await _context.SaveChangesAsync();
 
-            // Retorna a marca recém-criada com o ID gerado
             return CreatedAtAction(nameof(GetBrand), new { id = brand.Id }, brand);
         }
 
-        // PUT: api/Brand/5 - Atualiza uma marca existente
+        // PUT: api/Brand/5 - Atualiza uma marca existente usando MarcaDto
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBrand(int id, Marca brand)
+        public async Task<IActionResult> UpdateBrand(int id, [FromBody] MarcaDto brandDto)
         {
-            if (id != brand.Id)
+            if (id != brandDto.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(brand).State = EntityState.Modified;
+            var brand = await _context.Marcas.FindAsync(id);
+            if (brand == null)
+            {
+                return NotFound();
+            }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BrandExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            brand.Nome = brandDto.Nome;
+
+            _context.Entry(brand).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }

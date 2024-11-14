@@ -5,6 +5,8 @@ using Core.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Core.DTOs;
+using System.IO;
 
 namespace Api.Controllers
 {
@@ -21,16 +23,35 @@ namespace Api.Controllers
 
         // GET: api/Product - Lista todos os produtos
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Produto>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProducts()
         {
-            return await _context.Produtos.Include(p => p.Marca).ToListAsync();
+            return await _context.Produtos
+                .Select(p => new ProductDTO
+                {
+                    Id = p.Id,
+                    Nome = p.Nome,
+                    Preco = p.Preco,
+                    MarcaId = p.MarcaId,
+                    Imagem = p.Imagem
+                })
+                .ToListAsync();
         }
 
         // GET: api/Product/5 - Retorna um produto específico pelo ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Produto>> GetProduct(int id)
+        public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
-            var product = await _context.Produtos.Include(p => p.Marca).FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _context.Produtos
+                .Where(p => p.Id == id)
+                .Select(p => new ProductDTO
+                {
+                    Id = p.Id,
+                    Nome = p.Nome,
+                    Preco = p.Preco,
+                    MarcaId = p.MarcaId,
+                    Imagem = p.Imagem
+                })
+                .FirstOrDefaultAsync();
 
             if (product == null)
             {
@@ -40,40 +61,85 @@ namespace Api.Controllers
             return product;
         }
 
-        // POST: api/Product - Adiciona um novo produto com MarcaId
+        // POST: api/Product - Adiciona um novo produto com MarcaId e Imagem (IFormFile)
         [HttpPost]
-        public async Task<ActionResult<Produto>> CreateProduct(Produto product)
+        public async Task<ActionResult<ProductDTO>> CreateProduct([FromForm] ProductDTO productDto, IFormFile ImagemArquivo)
         {
-            // Verifica se o MarcaId fornecido existe
-            var marca = await _context.Marcas.FindAsync(product.MarcaId);
+            var marca = await _context.Marcas.FindAsync(productDto.MarcaId);
             if (marca == null)
             {
                 return BadRequest("MarcaId inválido. A marca especificada não foi encontrada.");
             }
 
-            // Adiciona o produto ao contexto e salva
+            // Salva a imagem no servidor, se fornecida
+            string imagemCaminho = null;
+            if (ImagemArquivo != null && ImagemArquivo.Length > 0)
+            {
+                var uploadsFolderPath = Path.Combine("wwwroot", "imagens_produtos");
+                Directory.CreateDirectory(uploadsFolderPath);
+
+                var filePath = Path.Combine(uploadsFolderPath, ImagemArquivo.FileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await ImagemArquivo.CopyToAsync(stream);
+                }
+                imagemCaminho = $"/imagens_produtos/{ImagemArquivo.FileName}"; // Caminho relativo para acesso
+            }
+
+            var product = new Produto
+            {
+                Nome = productDto.Nome,
+                Preco = productDto.Preco,
+                MarcaId = productDto.MarcaId,
+                Imagem = imagemCaminho
+            };
+
             _context.Produtos.Add(product);
             await _context.SaveChangesAsync();
 
-            // Retorna o produto recém-criado com o ID gerado
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+            productDto.Id = product.Id;
+            productDto.Imagem = imagemCaminho;
+            return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
         }
 
-        // PUT: api/Product/5 - Atualiza um produto existente
+        // PUT: api/Product/5 - Atualiza um produto existente com imagem (IFormFile)
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, Produto product)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, IFormFile imagem)
         {
-            if (id != product.Id)
+            if (id != productDto.Id)
             {
                 return BadRequest();
             }
 
-            // Verifica se o MarcaId fornecido existe
-            var marca = await _context.Marcas.FindAsync(product.MarcaId);
+            var marca = await _context.Marcas.FindAsync(productDto.MarcaId);
             if (marca == null)
             {
                 return BadRequest("MarcaId inválido. A marca especificada não foi encontrada.");
             }
+
+            var product = await _context.Produtos.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            // Atualiza a imagem no servidor, se fornecida
+            if (imagem != null && imagem.Length > 0)
+            {
+                var uploadsFolderPath = Path.Combine("wwwroot", "imagens_produtos");
+                Directory.CreateDirectory(uploadsFolderPath);
+
+                var filePath = Path.Combine(uploadsFolderPath, imagem.FileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imagem.CopyToAsync(stream);
+                }
+                product.Imagem = $"/imagens_produtos/{imagem.FileName}"; // Caminho relativo para acesso
+            }
+
+            product.Nome = productDto.Nome;
+            product.Preco = productDto.Preco;
+            product.MarcaId = productDto.MarcaId;
 
             _context.Entry(product).State = EntityState.Modified;
 
