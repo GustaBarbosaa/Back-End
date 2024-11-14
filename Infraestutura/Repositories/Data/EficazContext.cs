@@ -43,28 +43,31 @@ namespace Infraestrutura.Repositories.Data
                 new Marca { Id = 1, Nome = "Gabini" }
             );
 
-            // Adicionando produtos de exemplo
+            // Adicionando produtos de exemplo com o caminho da imagem
             modelBuilder.Entity<Produto>().HasData(
                 new Produto
                 {
                     Id = 1,
                     Nome = "Gabini® K-29 Premium Headset",
                     Preco = 94.99m,
-                    MarcaId = 1
+                    MarcaId = 1,
+                    Imagem = "/assets/img/1.svg" // Caminho relativo para o arquivo de imagem
                 },
                 new Produto
                 {
                     Id = 2,
                     Nome = "Gabini® K-30 Premium Headset",
                     Preco = 104.99m,
-                    MarcaId = 1
+                    MarcaId = 1,
+                    Imagem = "/assets/img/1.svg" // Caminho relativo para o arquivo de imagem
                 },
                 new Produto
                 {
                     Id = 3,
                     Nome = "Gabini® K-31 Premium Headset",
                     Preco = 114.99m,
-                    MarcaId = 1
+                    MarcaId = 1,
+                    Imagem = "/assets/img/1.svg" // Caminho relativo para o arquivo de imagem
                 }
             );
         }
