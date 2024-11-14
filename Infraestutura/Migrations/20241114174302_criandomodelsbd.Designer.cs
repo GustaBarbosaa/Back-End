@@ -3,6 +3,7 @@ using System;
 using Infraestrutura.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infraestutura.Migrations
 {
     [DbContext(typeof(EficazContext))]
-    partial class EficazContextModelSnapshot : ModelSnapshot
+    [Migration("20241114174302_criandomodelsbd")]
+    partial class criandomodelsbd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
@@ -141,13 +144,6 @@ namespace Infraestutura.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Marcas");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nome = "Gabini"
-                        });
                 });
 
             modelBuilder.Entity("Produto", b =>
@@ -171,29 +167,6 @@ namespace Infraestutura.Migrations
                     b.HasIndex("MarcaId");
 
                     b.ToTable("Produtos");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            MarcaId = 1,
-                            Nome = "Gabini® K-29 Premium Headset",
-                            Preco = 94.99m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            MarcaId = 1,
-                            Nome = "Gabini® K-30 Premium Headset",
-                            Preco = 104.99m
-                        },
-                        new
-                        {
-                            Id = 3,
-                            MarcaId = 1,
-                            Nome = "Gabini® K-31 Premium Headset",
-                            Preco = 114.99m
-                        });
                 });
 
             modelBuilder.Entity("Core.Models.Endereco", b =>
