@@ -56,8 +56,8 @@ namespace Api.Controllers
                     Nome = p.Nome,
                     Preco = p.Preco,
                     MarcaId = p.MarcaId,
-                    Imagem = p.Imagem != null ? ConvertToBase64(p.Imagem) : null,
-                    ImagemHover = p.ImagemHover != null ? ConvertToBase64(p.ImagemHover) : null
+                    Imagem = p.Imagem, // Já está em Base64
+                    ImagemHover = p.ImagemHover // Já está em Base64
                 })
                 .FirstOrDefaultAsync();
 
@@ -66,6 +66,8 @@ namespace Api.Controllers
 
             return product;
         }
+
+
 
         // POST: api/Product - Adiciona um novo produto e armazena imagem como Base64
         [HttpPost]
