@@ -152,7 +152,7 @@ namespace Infraestutura.Migrations
 
             modelBuilder.Entity("Produto", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int?>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -162,14 +162,14 @@ namespace Infraestutura.Migrations
                     b.Property<string>("ImagemHover")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("MarcaId")
+                    b.Property<int?>("MarcaId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Preco")
+                    b.Property<decimal?>("Preco")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -232,9 +232,7 @@ namespace Infraestutura.Migrations
                 {
                     b.HasOne("Marca", "Marca")
                         .WithMany("Produtos")
-                        .HasForeignKey("MarcaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MarcaId");
 
                     b.Navigation("Marca");
                 });

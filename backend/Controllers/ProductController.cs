@@ -105,18 +105,26 @@ namespace Api.Controllers
 
         // PUT: api/Product/5 - Atualiza um produto existente mantendo histórico
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, IFormFile imagem, IFormFile imagemHover)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, IFormFile? imagem, IFormFile? imagemHover)
         {
-            if (id != productDto.Id)
-                return BadRequest();
-
-            var marca = await _context.Marcas.FindAsync(productDto.MarcaId);
-            if (marca == null)
-                return BadRequest("MarcaId inválido. A marca especificada não foi encontrada.");
-
             var product = await _context.Produtos.FindAsync(id);
             if (product == null)
                 return NotFound();
+
+            // Atualize somente os campos que foram fornecidos
+            if (!string.IsNullOrWhiteSpace(productDto.Nome))
+                product.Nome = productDto.Nome;
+
+            if (productDto.Preco.HasValue)
+                product.Preco = productDto.Preco.Value;
+
+            if (productDto.MarcaId.HasValue)
+            {
+                var marcaExists = await _context.Marcas.AnyAsync(m => m.Id == productDto.MarcaId.Value);
+                if (!marcaExists)
+                    return BadRequest("O MarcaId fornecido não existe.");
+                product.MarcaId = productDto.MarcaId.Value;
+            }
 
             if (imagem != null && imagem.Length > 0)
                 product.Imagem = await ConvertFileToBase64Async(imagem);
@@ -124,26 +132,24 @@ namespace Api.Controllers
             if (imagemHover != null && imagemHover.Length > 0)
                 product.ImagemHover = await ConvertFileToBase64Async(imagemHover);
 
-            product.Nome = productDto.Nome;
-            product.Preco = productDto.Preco;
-            product.MarcaId = productDto.MarcaId;
-
             _context.Entry(product).State = EntityState.Modified;
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException ex)
             {
-                if (!ProductExists(id))
-                    return NotFound();
-                else
-                    throw;
+                return StatusCode(500, $"Erro ao atualizar o produto: {ex.InnerException?.Message}");
             }
 
             return NoContent();
         }
+
+
+
+
+
 
         // DELETE: api/Product/5 - Exclui um produto pelo ID
         [HttpDelete("{id}")]
