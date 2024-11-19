@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/ProductController.cs
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Infraestrutura.Repositories.Data;
 using Core.Models;
@@ -21,25 +22,29 @@ namespace Api.Controllers
             _context = context;
         }
 
-        // GET: api/Product - Lista todos os produtos
+        // GET: api/Product - Lista todos os produtos com imagens como Base64
+        // Controllers/ProductController.cs
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProducts()
         {
             var products = await _context.Produtos
-                .Select(p => new ProductDTO
-                {
-                    Id = p.Id,
-                    Nome = p.Nome,
-                    Preco = p.Preco,
-                    MarcaId = p.MarcaId,
-                    Imagem = p.Imagem
-                })
+                .Include(p => p.Marca)
                 .ToListAsync();
 
-            return Ok(products);  // Garante que estamos retornando uma resposta Ok com a lista de produtos
+            var productDtos = products.Select(p => new ProductDTO
+            {
+                Id = p.Id,
+                Nome = p.Nome,
+                Preco = p.Preco,
+                MarcaId = p.MarcaId,
+                Imagem = p.Imagem, 
+                ImagemHover = p.ImagemHover 
+            }).ToList();
+
+            return Ok(productDtos);
         }
 
-        // GET: api/Product/5 - Retorna um produto específico pelo ID
+
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
@@ -51,93 +56,71 @@ namespace Api.Controllers
                     Nome = p.Nome,
                     Preco = p.Preco,
                     MarcaId = p.MarcaId,
-                    Imagem = p.Imagem
+                    Imagem = p.Imagem != null ? ConvertToBase64(p.Imagem) : null,
+                    ImagemHover = p.ImagemHover != null ? ConvertToBase64(p.ImagemHover) : null
                 })
                 .FirstOrDefaultAsync();
 
             if (product == null)
-            {
                 return NotFound();
-            }
 
             return product;
         }
 
-        // POST: api/Product - Adiciona um novo produto com MarcaId e Imagem (IFormFile)
+        // POST: api/Product - Adiciona um novo produto e armazena imagem como Base64
         [HttpPost]
-        public async Task<ActionResult<ProductDTO>> CreateProduct([FromForm] ProductDTO productDto, IFormFile ImagemArquivo)
+        public async Task<ActionResult<ProductDTO>> CreateProduct([FromForm] ProductDTO productDto, IFormFile imagemArquivo, IFormFile imagemHoverArquivo)
         {
             var marca = await _context.Marcas.FindAsync(productDto.MarcaId);
             if (marca == null)
-            {
                 return BadRequest("MarcaId inválido. A marca especificada não foi encontrada.");
-            }
 
-            // Salva a imagem no servidor, se fornecida
-            string imagemCaminho = null;
-            if (ImagemArquivo != null && ImagemArquivo.Length > 0)
-            {
-                var uploadsFolderPath = Path.Combine("wwwroot", "imagens_produtos");
-                Directory.CreateDirectory(uploadsFolderPath);
+            string base64Imagem = null;
+            if (imagemArquivo != null && imagemArquivo.Length > 0)
+                base64Imagem = await ConvertFileToBase64Async(imagemArquivo);
 
-                var filePath = Path.Combine(uploadsFolderPath, ImagemArquivo.FileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await ImagemArquivo.CopyToAsync(stream);
-                }
-                imagemCaminho = $"/imagens_produtos/{ImagemArquivo.FileName}"; // Caminho relativo para acesso
-            }
+            string base64ImagemHover = null;
+            if (imagemHoverArquivo != null && imagemHoverArquivo.Length > 0)
+                base64ImagemHover = await ConvertFileToBase64Async(imagemHoverArquivo);
 
             var product = new Produto
             {
                 Nome = productDto.Nome,
                 Preco = productDto.Preco,
                 MarcaId = productDto.MarcaId,
-                Imagem = imagemCaminho
+                Imagem = base64Imagem,
+                ImagemHover = base64ImagemHover
             };
 
             _context.Produtos.Add(product);
             await _context.SaveChangesAsync();
 
             productDto.Id = product.Id;
-            productDto.Imagem = imagemCaminho;
+            productDto.Imagem = base64Imagem;
+            productDto.ImagemHover = base64ImagemHover;
             return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
         }
 
-        // PUT: api/Product/5 - Atualiza um produto existente com imagem (IFormFile)
+        // PUT: api/Product/5 - Atualiza um produto existente mantendo histórico
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, IFormFile imagem)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, IFormFile imagem, IFormFile imagemHover)
         {
             if (id != productDto.Id)
-            {
                 return BadRequest();
-            }
 
             var marca = await _context.Marcas.FindAsync(productDto.MarcaId);
             if (marca == null)
-            {
                 return BadRequest("MarcaId inválido. A marca especificada não foi encontrada.");
-            }
 
             var product = await _context.Produtos.FindAsync(id);
             if (product == null)
-            {
                 return NotFound();
-            }
 
-            // Atualiza a imagem no servidor, se fornecida
             if (imagem != null && imagem.Length > 0)
-            {
-                var uploadsFolderPath = Path.Combine("wwwroot", "imagens_produtos");
-                Directory.CreateDirectory(uploadsFolderPath);
+                product.Imagem = await ConvertFileToBase64Async(imagem);
 
-                var filePath = Path.Combine(uploadsFolderPath, imagem.FileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await imagem.CopyToAsync(stream);
-                }
-                product.Imagem = $"/imagens_produtos/{imagem.FileName}"; // Caminho relativo para acesso
-            }
+            if (imagemHover != null && imagemHover.Length > 0)
+                product.ImagemHover = await ConvertFileToBase64Async(imagemHover);
 
             product.Nome = productDto.Nome;
             product.Preco = productDto.Preco;
@@ -152,13 +135,9 @@ namespace Api.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!ProductExists(id))
-                {
                     return NotFound();
-                }
                 else
-                {
                     throw;
-                }
             }
 
             return NoContent();
@@ -170,9 +149,7 @@ namespace Api.Controllers
         {
             var product = await _context.Produtos.FindAsync(id);
             if (product == null)
-            {
                 return NotFound();
-            }
 
             _context.Produtos.Remove(product);
             await _context.SaveChangesAsync();
@@ -180,10 +157,34 @@ namespace Api.Controllers
             return NoContent();
         }
 
-        // Verifica se um produto existe pelo ID
+        // Helper: Verifica se um produto existe pelo ID
         private bool ProductExists(int id)
         {
             return _context.Produtos.Any(e => e.Id == id);
+        }
+
+        // Helper: Converte arquivo para Base64
+        private async Task<string> ConvertFileToBase64Async(IFormFile file)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.CopyToAsync(memoryStream);
+                return Convert.ToBase64String(memoryStream.ToArray());
+            }
+        }
+
+        // Torna o método estático para evitar capturas desnecessárias
+        private static string ConvertToBase64(string relativePath)
+        {
+            var fullPath = Path.Combine("wwwroot", relativePath); // Constrói o caminho completo
+            if (!System.IO.File.Exists(fullPath))
+            {
+                Console.WriteLine($"Arquivo não encontrado: {fullPath}");
+                return null;
+            }
+
+            var fileBytes = System.IO.File.ReadAllBytes(fullPath); // Lê os bytes do arquivo
+            return Convert.ToBase64String(fileBytes); // Retorna como Base64
         }
     }
 }

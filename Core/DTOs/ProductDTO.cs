@@ -13,5 +13,6 @@ namespace Core.DTOs
         public decimal Preco { get; set; }
         public int MarcaId { get; set; }
         public string Imagem { get; set; }
+        public string ImagemHover { get; set; }
     }
 }
