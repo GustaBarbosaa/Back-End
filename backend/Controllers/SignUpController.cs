@@ -1,5 +1,4 @@
-﻿
-using Core.DTOs;
+﻿using Core.DTOs;
 using Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -115,46 +114,18 @@ namespace Apresentacao.Controllers
         }
 
         [HttpPut("editar-perfil/{id}")]
-        public IActionResult UpdateProfile(int id, [FromForm] UpdateProfileDTO updateDto)
+        public IActionResult EditarPerfil(int id, [FromForm] UpdateProfileDTO updateDto)
         {
             try
             {
-                // Verifica se o usuário existe antes de tentar atualizar
-                var existingUser = _signUpService.GetSignUpById(id);
-                if (existingUser == null)
-                {
-                    return NotFound(new { error = "Usuário não encontrado para atualização." });
-                }
-
-                var updatedUser = _signUpService.UpdateProfile(id, updateDto);
-
-                return Ok(new
-                {
-                    User = new
-                    {
-                        updatedUser.Id,
-                        updatedUser.Username,
-                        updatedUser.NomeSocial,
-                        updatedUser.CPF,
-                        updatedUser.Nacionalidade,
-                        updatedUser.Email,
-                        updatedUser.Telefone,
-                        updatedUser.Sexo,
-                        updatedUser.Cor,
-                        updatedUser.Foto,
-                        updatedUser.Senha,
-                    }
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                _signUpService.UpdateProfile(id, updateDto);
+                return Ok(new { message = "Perfil atualizado com sucesso!" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Erro interno ao processar a solicitação." });
+                return BadRequest(new { error = ex.Message });
             }
         }
+
     }
 }
-

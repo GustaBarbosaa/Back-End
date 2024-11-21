@@ -9,6 +9,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Apresentacao.Services;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Services
 {
@@ -82,39 +83,76 @@ namespace Application.Services
             return BCrypt.Net.BCrypt.Verify(plainPassword, hashedPassword);
         }
 
-        public SignUp UpdateProfile(int id, UpdateProfileDTO updateDto)
+        // Adicione dentro da classe SignUpService
+
+        public void UpdateProfile(int id, UpdateProfileDTO updateDto)
         {
-            var user = _signRepository.GetById(id);
-            if (user == null) throw new ArgumentException("Usuário não encontrado.");
+            var existingUser = _signRepository.GetById(id);
 
-            // Atualização condicional: mantém o valor antigo se o campo do DTO estiver vazio ou igual a "string"
-            user.Username = !string.IsNullOrWhiteSpace(updateDto.Username) && updateDto.Username != "string" ? updateDto.Username : user.Username;
-            user.NomeSocial = !string.IsNullOrWhiteSpace(updateDto.NomeSocial) && updateDto.NomeSocial != "string" ? updateDto.NomeSocial : user.NomeSocial;
-            user.CPF = !string.IsNullOrWhiteSpace(updateDto.CPF) && updateDto.CPF != "string" ? updateDto.CPF : user.CPF;
-            user.Nacionalidade = !string.IsNullOrWhiteSpace(updateDto.Nacionalidade) && updateDto.Nacionalidade != "string" ? updateDto.Nacionalidade : user.Nacionalidade;
-            user.Email = !string.IsNullOrWhiteSpace(updateDto.Email) && updateDto.Email != "string" ? updateDto.Email : user.Email;
-            user.Telefone = !string.IsNullOrWhiteSpace(updateDto.Telefone) && updateDto.Telefone != "string" ? updateDto.Telefone : user.Telefone;
-            user.Sexo = !string.IsNullOrWhiteSpace(updateDto.Sexo) && updateDto.Sexo != "string" ? updateDto.Sexo : user.Sexo;
-            user.Cor = !string.IsNullOrWhiteSpace(updateDto.Cor) && updateDto.Cor != "string" ? updateDto.Cor : user.Cor;
-
-            // Converte `IFormFile` para base64 somente se `Foto` estiver presente
-            if (updateDto.Foto != null)
+            if (existingUser == null)
             {
-                user.Foto = ConvertImageToBase64(updateDto.Foto.OpenReadStream());
+                throw new Exception("Usuário não encontrado.");
             }
 
-            // Atualiza a senha se `NovaSenha` estiver presente e não for "string"
+            // Atualizar apenas os campos não nulos e diferentes de "string"
+            if (!string.IsNullOrWhiteSpace(updateDto.Username) && updateDto.Username != "string")
+                existingUser.Username = updateDto.Username;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.NomeSocial) && updateDto.NomeSocial != "string")
+                existingUser.NomeSocial = updateDto.NomeSocial;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.CPF) && updateDto.CPF != "string")
+                existingUser.CPF = updateDto.CPF;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Nacionalidade) && updateDto.Nacionalidade != "string")
+                existingUser.Nacionalidade = updateDto.Nacionalidade;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Email) && updateDto.Email != "string")
+                existingUser.Email = updateDto.Email;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Telefone) && updateDto.Telefone != "string")
+                existingUser.Telefone = updateDto.Telefone;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Sexo) && updateDto.Sexo != "string")
+                existingUser.Sexo = updateDto.Sexo;
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Cor) && updateDto.Cor != "string")
+                existingUser.Cor = updateDto.Cor;
+
+            // Atualizar senha apenas se for válida
             if (!string.IsNullOrWhiteSpace(updateDto.NovaSenha) && updateDto.NovaSenha != "string")
             {
-                user.Senha = BCrypt.Net.BCrypt.HashPassword(updateDto.NovaSenha);
+                if (updateDto.NovaSenha.Length < 6)
+                    throw new ArgumentException("Senha inválida.");
+
+                existingUser.Senha = BCrypt.Net.BCrypt.HashPassword(updateDto.NovaSenha);
             }
 
+            // Atualizar foto se fornecida
+            if (updateDto.Foto != null)
+            {
+                existingUser.Foto = ConvertImageToBase64(updateDto.Foto.OpenReadStream());
+            }
 
-            _signRepository.Update(user);
-            return user;
+            _signRepository.Update(existingUser);
         }
 
 
+
+
+
+        // Método para salvar a foto e retornar o caminho/URL
+        private string ConvertToPath(IFormFile file)
+        {
+            // Simulação de upload de arquivo - substitua por lógica real de armazenamento
+            var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+            var filePath = Path.Combine("wwwroot/uploads", fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                file.CopyTo(stream);
+            }
+            return $"/uploads/{fileName}";
+        }
 
 
         private string ConvertImageToBase64(Stream fotoStream)
@@ -125,6 +163,16 @@ namespace Application.Services
                 return Convert.ToBase64String(memoryStream.ToArray());
             }
         }
+
+        private bool IsValidPassword(string password)
+        {
+            return password.Length >= 8 &&
+                   Regex.IsMatch(password, @"[A-Z]") &&
+                   Regex.IsMatch(password, @"[a-z]") &&
+                   Regex.IsMatch(password, @"\d") &&
+                   Regex.IsMatch(password, @"[^\w\d\s:]");
+        }
+
 
         private void ValidateSignUpData(SignUpDTO signUpDto)
         {
