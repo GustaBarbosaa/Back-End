@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Core.Models;
+using System.Collections.Generic;
 
 namespace Infraestrutura.Repositories.Data
 {
@@ -10,6 +11,8 @@ namespace Infraestrutura.Repositories.Data
         public DbSet<SignUp> SignUps { get; set; }
         public DbSet<Token> Tokens { get; set; }
         public DbSet<Endereco> Enderecos { get; set; }
+        public DbSet<Produto> Produtos { get; set; }
+        public DbSet<Marca> Marcas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -20,10 +23,21 @@ namespace Infraestrutura.Repositories.Data
 
             modelBuilder.Entity<Token>()
                 .HasOne(t => t.SignUp)
-                .WithMany(s => s.Tokens)  
+                .WithMany(s => s.Tokens)
                 .HasForeignKey(t => t.SignUpId);
+
+            modelBuilder.Entity<Produto>()
+                .HasOne(p => p.Marca)
+                .WithMany(m => m.Produtos)
+                .HasForeignKey(p => p.MarcaId);
+
+            // Chamar o SeedData
+            SeedData.Seed(modelBuilder);
 
             base.OnModelCreating(modelBuilder);
         }
+
+
+
     }
 }

@@ -44,8 +44,16 @@ namespace Infraestrutura.Repositories
         // Método para atualizar o registro de SignUp no banco de dados
         public void Update(SignUp signUp)
         {
-            _context.SignUps.Update(signUp);
+            var existingUser = _context.SignUps.FirstOrDefault(s => s.Id == signUp.Id);
+            if (existingUser == null)
+            {
+                throw new ArgumentException("Usuário não encontrado para atualização.");
+            }
+
+            // Atualizar apenas os campos alterados para evitar substituições desnecessárias
+            _context.Entry(existingUser).CurrentValues.SetValues(signUp);
             _context.SaveChanges();
         }
+
     }
 }
