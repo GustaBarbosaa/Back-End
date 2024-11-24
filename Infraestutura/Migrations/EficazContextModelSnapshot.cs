@@ -64,7 +64,6 @@ namespace Infraestutura.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Foto")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nacionalidade")
