@@ -62,17 +62,26 @@ namespace Apresentacao.Services
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
+            // Fetch the key securely from an environment variable or secret management service
+            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                throw new InvalidOperationException("JWT secret key is not configured.");
+            }
+            var key = Encoding.ASCII.GetBytes(secretKey);
+
             try
             {
                 tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(_secretKey),
+                    IssuerSigningKey = new SymmetricSecurityKey(key), // Uses securely retrieved key
                     ValidateIssuer = false,
                     ValidateAudience = false,
                     ClockSkew = TimeSpan.Zero
                 }, out SecurityToken validatedToken);
 
+                // Additional check: Ensure the token is not revoked
                 if (_tokenRepository.IsTokenRevoked(token))
                 {
                     return false;
