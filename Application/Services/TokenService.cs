@@ -18,14 +18,14 @@ namespace Apresentacao.Services
         {
             _tokenRepository = tokenRepository;
 
-            // Securely fetch the secret key from environment variables
-            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            var secretKey = configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(secretKey))
             {
-                throw new InvalidOperationException("JWT secret key is not configured.");
+                throw new InvalidOperationException("JWT secret key is not configured in appsettings.json.");
             }
             _secretKey = Encoding.ASCII.GetBytes(secretKey);
         }
+
 
         public string GenerateToken(SignUp user)
         {
