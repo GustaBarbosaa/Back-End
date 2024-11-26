@@ -7,6 +7,8 @@
 - Lucas Lima RA: 1976570
 - Lucas Panizio RA: 1978916
 
+#LINK: SONARQUBE : https://sonarqube.labs.unimar.br/dashboard?id=PROJETO-BACKEND---Buenos-e-cia&codeScope=overall
+
 # Trello - Link: https://trello.com/b/mSiFJ3pe/buenos-cia
 
   # Video no youtube demonstrando o projeto
